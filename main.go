@@ -9,23 +9,29 @@ import (
 	"time"
 )
 
+// Server represents a server that can receive a GET request at Address
+// and has been up since StartTime.
 type Server struct {
 	StartTime time.Time
 	Address   string
 }
 
+// LogUptime simply logs the time since the start time.
 func LogUptime(startTime time.Time) {
-	log.Printf("uptime: %s\n", time.Since(startTime) - (4 * time.Hour))
+	log.Print(time.Since(startTime) - 4*time.Hour)
 }
 
+// Check will send a GET request to the Server and log the response
+// status.  If the GET returns an error, that error and the time since
+// the server's start time will be reported.
 func (s Server) Check() {
 	resp, err := http.Get(s.Address)
 	if err != nil {
 		LogUptime(s.StartTime)
-		log.Printf("Error: %v", err)
+		log.Printf("GET error: %v", err)
 		return
 	}
-	log.Printf("%s %v", s.Address, resp.Status)
+	log.Println(s.Address, resp.Status)
 }
 
 func main() {
@@ -37,7 +43,7 @@ func main() {
 	format := "2006-01-02T15:04"
 	startTime, err := time.Parse(format, os.Args[2])
 	if err != nil {
-		log.Printf("timestamp parsing: %v", err)
+		log.Printf("time parsing error: %v", err)
 	}
 	LogUptime(startTime)
 
@@ -47,14 +53,16 @@ func main() {
 	signal.Notify(interrupted, os.Interrupt)
 
 	quick := time.NewTicker(15 * time.Second)
+	defer quick.Stop()
 
+topLoop:
 	for {
 		select {
 		case <-quick.C:
 			go server.Check()
 		case <-interrupted:
 			LogUptime(startTime)
-			os.Exit(0)
+			break topLoop
 		}
 	}
 }
