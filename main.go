@@ -25,7 +25,10 @@ func LogUptime(startTime time.Time) {
 // status.  If the GET returns an error, that error and the time since
 // the server's start time will be reported.
 func (s Server) Check() {
-	resp, err := http.Get(s.Address)
+	client := &http.Client{
+		Timeout: time.Second * 10,
+	}
+	resp, err := client.Get(s.Address)
 	if err != nil {
 		LogUptime(s.StartTime)
 		log.Printf("GET error: %v", err)
