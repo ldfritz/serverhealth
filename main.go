@@ -55,13 +55,10 @@ func main() {
 	interrupted := make(chan os.Signal, 1)
 	signal.Notify(interrupted, os.Interrupt)
 
-	quick := time.NewTicker(15 * time.Second)
-	defer quick.Stop()
-
 topLoop:
 	for {
 		select {
-		case <-quick.C:
+		case <-time.After(15 * time.Second):
 			go server.Check()
 		case <-interrupted:
 			LogUptime(startTime)
